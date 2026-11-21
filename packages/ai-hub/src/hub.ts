@@ -34,8 +34,15 @@ export function createAIHub(options: AIHubOptions): AIHub {
     options.addClipToTimeline
   );
 
-  const video = new AIVideoGenerationEngine(videoBridge);
-  const audio = new AIAudioGenerationEngine();
+  const video = new AIVideoGenerationEngine(videoBridge, getApiKeys);
+
+  const audio = new AIAudioGenerationEngine(getApiKeys, async (blob, meta) => {
+    await options.addMediaAsset(blob, {
+      source: "ai-audio",
+      ...meta,
+    });
+  });
+
   const effects = new AIEffectsEngine();
 
   return {

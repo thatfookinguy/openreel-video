@@ -1,19 +1,40 @@
 import { GenerationRequest, GenerationJob } from "./types";
 import { MediaBridge } from "./media-bridge";
+import { FalKlingProvider } from "./providers/fal-kling";
+import { OpenAICompatibleVideoProvider } from "./providers/openai-compatible";
+import { LocalComfyProvider } from "./providers/local-comfy";
 
 export class AIVideoGenerationEngine {
   private jobs = new Map<string, GenerationJob>();
-  private providers = new Map<string, any>();
-  private mediaBridge: MediaBridge;
   private listeners = new Set<(jobs: GenerationJob[]) => void>();
+  private mediaBridge: MediaBridge;
+  private getApiKeys: () => Record<string, any>;
 
-  constructor(mediaBridge: MediaBridge) {
+  constructor(
+    mediaBridge: MediaBridge,
+    getApiKeys: () => Record<string, any> = () => ({})
+  ) {
     this.mediaBridge = mediaBridge;
-    // Providers registered externally or via multi-api router
+    this.getApiKeys = getApiKeys;
   }
 
-  registerProvider(id: string, provider: any) {
-    this.providers.set(id, provider);
+  private getProvider(name: string) {
+    const keys = this.getApiKeys();
+
+    switch (name) {
+      case "fal-kling":
+        return new FalKlingProvider(() => keys.fal?.apiKey || keys["fal-kling"]?.apiKey);
+      case "openai-compatible":
+        return new OpenAICompatibleVideoProvider(() => ({
+          apiKey: keys.openai?.apiKey,
+          baseUrl: keys.openai?.baseUrl,
+          model: keys.openai?.model,
+        }));
+      case "local-comfy":
+        return new LocalComfyProvider(() => keys["local-comfy"]?.baseUrl);
+      default:
+        throw new Error(`Unknown video provider: ${name}`);
+    }
   }
 
   async generate(req: Omit<GenerationRequest, "id">): Promise<string> {
@@ -36,15 +57,10 @@ export class AIVideoGenerationEngine {
     const job = this.jobs.get(id);
     if (!job) return;
 
-    const provider = this.providers.get(job.request.provider);
-    if (!provider) {
-      this.fail(id, `Unknown provider: ${job.request.provider}`);
-      return;
-    }
-
     try {
       this.update(id, { status: "running", progress: 5 });
 
+      const provider = this.getProvider(job.request.provider);
       const result = await provider.generate(job.request, (progress: number) => {
         this.update(id, { progress });
       });
@@ -69,7 +85,11 @@ export class AIVideoGenerationEngine {
         provider: job.request.provider,
       });
     } catch (err: any) {
-      this.fail(id, err?.message || String(err));
+      this.update(id, {
+        status: "failed",
+        error: err?.message || String(err),
+        progress: 0,
+      });
     }
   }
 
@@ -78,10 +98,6 @@ export class AIVideoGenerationEngine {
     if (!job) return;
     Object.assign(job, patch, { updatedAt: Date.now() });
     this.emit();
-  }
-
-  private fail(id: string, error: string) {
-    this.update(id, { status: "failed", error, progress: 0 });
   }
 
   cancel(id: string) {
