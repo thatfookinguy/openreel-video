@@ -10,6 +10,9 @@ import {
   Wand2,
   FileStack,
   Volume2,
+  Sparkles,
+  Settings,
+  Eraser,
 } from "@/icons/lucide-compat";
 import { Button } from "@openreel/ui";
 import { cn } from "@openreel/ui";
@@ -22,9 +25,26 @@ import { TemplatesBrowserPanel } from "./inspector/TemplatesBrowserPanel";
 import { useTtsAudioStore } from "../../stores/tts-store";
 import { toast } from "../../stores/notification-store";
 
+// New AI panels from our packages
+import { AIVideoPanel } from "./ai/AIVideoPanel";
+import { AIAudioPanel } from "./ai/AIAudioPanel";
+import { AIEffectsPanel } from "./ai/AIEffectsPanel";
+import { AISettingsPanel } from "./ai/AISettingsPanel";
+
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
 
-type FeatureId = "templates" | "captions" | "tts" | "filters" | "music" | "multicam" | null;
+type FeatureId =
+  | "templates"
+  | "captions"
+  | "tts"
+  | "filters"
+  | "music"
+  | "multicam"
+  | "ai-video"
+  | "ai-audio"
+  | "ai-effects"
+  | "ai-settings"
+  | null;
 
 interface FeatureCardProps {
   icon: React.ElementType;
@@ -51,31 +71,54 @@ const FeatureCard: React.FC<FeatureCardProps> = ({
   isActive,
   onClick,
 }) => (
-  <Button variant="ghost" onClick={onClick} type="button" aria-label={title} className={cn("group/card block h-auto min-w-0 whitespace-normal rounded-[7px] border text-left transition-[background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50", (isActive ? "" : "border-border bg-bg-1 hover:bg-bg-2"), "p-3", `w-full min-w-0 text-left group ${
-      isActive
-        ? `${activeBorder} ${activeBg} ring-1 ${activeRing}`
-        : "border-border bg-background-tertiary hover:border-border-strong hover:bg-background-elevated"
-    }`)}>
+  <Button
+    variant="ghost"
+    onClick={onClick}
+    type="button"
+    aria-label={title}
+    className={cn(
+      "group/card block h-auto min-w-0 whitespace-normal rounded-[7px] border text-left transition-[background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
+      isActive ? "" : "border-border bg-bg-1 hover:bg-bg-2",
+      "p-3",
+      `w-full min-w-0 text-left group ${
+        isActive
+          ? `${activeBorder} ${activeBg} ring-1 ${activeRing}`
+          : "border-border bg-background-tertiary hover:border-border-strong hover:bg-background-elevated"
+      }`
+    )}
+  >
     <div className="flex items-center gap-3 min-w-0">
       <div
         className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
           isActive ? iconBg : "bg-background-secondary group-hover:bg-background-tertiary"
         }`}
       >
-        <Icon size={20} className={isActive ? iconColor : "text-text-secondary group-hover:text-text-primary"} aria-hidden />
+        <Icon
+          size={20}
+          className={isActive ? iconColor : "text-text-secondary group-hover:text-text-primary"}
+          aria-hidden
+        />
       </div>
       <div className="flex-1 min-w-0 overflow-hidden">
         <div className="flex items-center justify-between gap-2">
-          <span className="text-fg-2 font-bold overflow-hidden text-[12px]" style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}>
+          <span
+            className="text-fg-2 font-bold overflow-hidden text-[12px]"
+            style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}
+          >
             {title}
           </span>
           <ChevronRight
             size={14}
-            className={`shrink-0 transition-transform ${isActive ? "rotate-90 text-text-primary" : "text-text-muted group-hover:text-text-secondary"}`}
+            className={`shrink-0 transition-transform ${
+              isActive ? "rotate-90 text-text-primary" : "text-text-muted group-hover:text-text-secondary"
+            }`}
             aria-hidden
           />
         </div>
-        <span className="text-fg-2 font-normal block overflow-hidden mt-0.5 text-[10px]" style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}>
+        <span
+          className="text-fg-2 font-normal block overflow-hidden mt-0.5 text-[10px]"
+          style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}
+        >
           {description}
         </span>
       </div>
@@ -93,9 +136,7 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({ title, icon: Icon, chil
   <div className="space-y-2 min-w-0">
     <div className="flex items-center gap-2 px-1">
       <Icon size={12} className="text-text-muted shrink-0" aria-hidden />
-      <span className="text-fg-2 font-bold text-[10px] uppercase">
-        {title}
-      </span>
+      <span className="text-fg-2 font-bold text-[10px] uppercase">{title}</span>
     </div>
     <div className="space-y-1.5 min-w-0">{children}</div>
   </div>
@@ -105,12 +146,18 @@ export const AIGenTab: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<FeatureId>(null);
   const ttsHasUnsaved = useTtsAudioStore((s) => s.generatedAudio !== null && !s.isAudioSaved);
 
-  const navigateAway = useCallback((next: FeatureId) => {
-    if (activeFeature === "tts" && next !== "tts" && ttsHasUnsaved) {
-      toast.warning("Unsaved audio discarded", "Save to media or download next time to keep it.");
-    }
-    setActiveFeature(next);
-  }, [activeFeature, ttsHasUnsaved]);
+  const navigateAway = useCallback(
+    (next: FeatureId) => {
+      if (activeFeature === "tts" && next !== "tts" && ttsHasUnsaved) {
+        toast.warning(
+          "Unsaved audio discarded",
+          "Save to media or download next time to keep it."
+        );
+      }
+      setActiveFeature(next);
+    },
+    [activeFeature, ttsHasUnsaved]
+  );
 
   const handleFeatureClick = (id: FeatureId) => {
     navigateAway(activeFeature === id ? null : id);
@@ -134,6 +181,39 @@ export const AIGenTab: React.FC = () => {
             <MultiCameraPanel />
           </Suspense>
         );
+      case "ai-video":
+        // Engine is created higher up or via context in full integration.
+        // For now we render a self-contained panel that can later receive the hub.
+        return (
+          <div className="p-2 text-sm text-text-secondary">
+            <p className="mb-3">
+              AI Video Generation is ready. Wire <code>createAIHub()</code> and pass{" "}
+              <code>engine=&#123;hub.video&#125;</code> for full functionality.
+            </p>
+            {/* Placeholder – replace with <AIVideoPanel engine={hub.video} /> once hub is provided */}
+            <AIVideoPanel engine={null as any} />
+          </div>
+        );
+      case "ai-audio":
+        return (
+          <div className="p-2 text-sm text-text-secondary">
+            <p className="mb-3">
+              AI Audio Generation is ready. Pass <code>engine=&#123;hub.audio&#125;</code> for full functionality.
+            </p>
+            <AIAudioPanel engine={null as any} />
+          </div>
+        );
+      case "ai-effects":
+        return (
+          <div className="p-2 text-sm text-text-secondary">
+            <p className="mb-3">
+              AI Effects is ready. Pass <code>engine=&#123;hub.effects&#125;</code> and the selected clip ID.
+            </p>
+            <AIEffectsPanel engine={null as any} selectedClipId={null} />
+          </div>
+        );
+      case "ai-settings":
+        return <AISettingsPanel />;
       default:
         return null;
     }
@@ -142,9 +222,16 @@ export const AIGenTab: React.FC = () => {
   if (activeFeature) {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto w-full min-w-0">
-        <Button onClick={() => navigateAway(null)} type="button" aria-label="Back to AI Tools" className="inline-flex min-w-0 items-center gap-1.5 font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 px-3 text-[12px] text-fg-2 hover:bg-bg-2 hover:text-fg justify-start rounded-none border-b border-border bg-background-secondary shrink-0">
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center">{<ChevronRight size={14} className="rotate-180" aria-hidden />}</span>
-          <span className="truncate">{"Back to AI Tools"}</span>
+        <Button
+          onClick={() => navigateAway(null)}
+          type="button"
+          aria-label="Back to AI Tools"
+          className="inline-flex min-w-0 items-center gap-1.5 font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 px-3 text-[12px] text-fg-2 hover:bg-bg-2 hover:text-fg justify-start rounded-none border-b border-border bg-background-secondary shrink-0"
+        >
+          <span className="flex h-4 w-4 shrink-0 items-center justify-center">
+            <ChevronRight size={14} className="rotate-180" aria-hidden />
+          </span>
+          <span className="truncate">Back to AI Tools</span>
         </Button>
         <div className="flex-1 w-full overflow-y-auto">
           <div className="p-4 w-full min-w-0 overflow-hidden">{renderActivePanel()}</div>
@@ -160,13 +247,63 @@ export const AIGenTab: React.FC = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 mb-3">
             <Wand2 size={24} className="text-primary" aria-hidden />
           </div>
-          <h2 className="text-[12px] leading-4 text-fg-2 font-bold block">
-            AI-Powered Tools
-          </h2>
+          <h2 className="text-[12px] leading-4 text-fg-2 font-bold block">AI-Powered Tools</h2>
           <span className="text-fg-2 font-normal block mt-1 text-[11px]">
             Automate your editing with intelligent features
           </span>
         </div>
+
+        {/* NEW – Generative AI */}
+        <FeatureSection title="Generative AI" icon={Sparkles}>
+          <FeatureCard
+            icon={Video}
+            title="AI Video Generation"
+            description="Text-to-video & image-to-video (Kling, etc.)"
+            iconColor="text-purple-400"
+            iconBg="bg-purple-500/20"
+            activeBorder="border-purple-500/50"
+            activeBg="bg-purple-500/10"
+            activeRing="ring-purple-500/30"
+            isActive={activeFeature === "ai-video"}
+            onClick={() => handleFeatureClick("ai-video")}
+          />
+          <FeatureCard
+            icon={Music}
+            title="AI Audio Generation"
+            description="Music, voiceovers & sound effects"
+            iconColor="text-pink-400"
+            iconBg="bg-pink-500/20"
+            activeBorder="border-pink-500/50"
+            activeBg="bg-pink-500/10"
+            activeRing="ring-pink-500/30"
+            isActive={activeFeature === "ai-audio"}
+            onClick={() => handleFeatureClick("ai-audio")}
+          />
+          <FeatureCard
+            icon={Eraser}
+            title="AI Effects"
+            description="Background removal, object removal, enhance"
+            iconColor="text-amber-400"
+            iconBg="bg-amber-500/20"
+            activeBorder="border-amber-500/50"
+            activeBg="bg-amber-500/10"
+            activeRing="ring-amber-500/30"
+            isActive={activeFeature === "ai-effects"}
+            onClick={() => handleFeatureClick("ai-effects")}
+          />
+          <FeatureCard
+            icon={Settings}
+            title="API Keys & Settings"
+            description="Add your fal.ai, ElevenLabs, etc. keys"
+            iconColor="text-slate-400"
+            iconBg="bg-slate-500/20"
+            activeBorder="border-slate-500/50"
+            activeBg="bg-slate-500/10"
+            activeRing="ring-slate-500/30"
+            isActive={activeFeature === "ai-settings"}
+            onClick={() => handleFeatureClick("ai-settings")}
+          />
+        </FeatureSection>
 
         <FeatureSection title="Content Generation" icon={Wand2}>
           <FeatureCard
