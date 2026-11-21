@@ -13,6 +13,7 @@ import {
   Sparkles,
   Settings,
   Eraser,
+  DollarSign,
 } from "@/icons/lucide-compat";
 import { Button } from "@openreel/ui";
 import { cn } from "@openreel/ui";
@@ -29,6 +30,7 @@ import { AIVideoPanel } from "./ai/AIVideoPanel";
 import { AIAudioPanel } from "./ai/AIAudioPanel";
 import { AIEffectsPanel } from "./ai/AIEffectsPanel";
 import { AISettingsPanel } from "./ai/AISettingsPanel";
+import { AffiliateStudioPanel } from "./ai/AffiliateStudioPanel";
 import { useAIHub } from "./ai/AIHubContext";
 
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
@@ -44,6 +46,7 @@ type FeatureId =
   | "ai-audio"
   | "ai-effects"
   | "ai-settings"
+  | "affiliate"
   | null;
 
 interface FeatureCardProps {
@@ -190,6 +193,8 @@ export const AIGenTab: React.FC = () => {
         return <AIEffectsPanel engine={hub.effects} selectedClipId={null} />;
       case "ai-settings":
         return <AISettingsPanel />;
+      case "affiliate":
+        return <AffiliateStudioPanel />;
       default:
         return null;
     }
@@ -267,9 +272,21 @@ export const AIGenTab: React.FC = () => {
             onClick={() => handleFeatureClick("ai-effects")}
           />
           <FeatureCard
+            icon={DollarSign}
+            title="Affiliate Studio"
+            description="Product research, scripts & ad creatives"
+            iconColor="text-emerald-400"
+            iconBg="bg-emerald-500/20"
+            activeBorder="border-emerald-500/50"
+            activeBg="bg-emerald-500/10"
+            activeRing="ring-emerald-500/30"
+            isActive={activeFeature === "affiliate"}
+            onClick={() => handleFeatureClick("affiliate")}
+          />
+          <FeatureCard
             icon={Settings}
             title="API Keys & Settings"
-            description="Add your fal.ai, ElevenLabs, etc. keys"
+            description="OpenRouter, Ollama, fal.ai, ElevenLabs..."
             iconColor="text-slate-400"
             iconBg="bg-slate-500/20"
             activeBorder="border-slate-500/50"
