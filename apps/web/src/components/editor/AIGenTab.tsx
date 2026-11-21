@@ -25,11 +25,11 @@ import { TemplatesBrowserPanel } from "./inspector/TemplatesBrowserPanel";
 import { useTtsAudioStore } from "../../stores/tts-store";
 import { toast } from "../../stores/notification-store";
 
-// New AI panels from our packages
 import { AIVideoPanel } from "./ai/AIVideoPanel";
 import { AIAudioPanel } from "./ai/AIAudioPanel";
 import { AIEffectsPanel } from "./ai/AIEffectsPanel";
 import { AISettingsPanel } from "./ai/AISettingsPanel";
+import { useAIHub } from "./ai/AIHubContext";
 
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
 
@@ -145,6 +145,7 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({ title, icon: Icon, chil
 export const AIGenTab: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<FeatureId>(null);
   const ttsHasUnsaved = useTtsAudioStore((s) => s.generatedAudio !== null && !s.isAudioSaved);
+  const hub = useAIHub();
 
   const navigateAway = useCallback(
     (next: FeatureId) => {
@@ -182,36 +183,11 @@ export const AIGenTab: React.FC = () => {
           </Suspense>
         );
       case "ai-video":
-        // Engine is created higher up or via context in full integration.
-        // For now we render a self-contained panel that can later receive the hub.
-        return (
-          <div className="p-2 text-sm text-text-secondary">
-            <p className="mb-3">
-              AI Video Generation is ready. Wire <code>createAIHub()</code> and pass{" "}
-              <code>engine=&#123;hub.video&#125;</code> for full functionality.
-            </p>
-            {/* Placeholder – replace with <AIVideoPanel engine={hub.video} /> once hub is provided */}
-            <AIVideoPanel engine={null as any} />
-          </div>
-        );
+        return <AIVideoPanel engine={hub.video} />;
       case "ai-audio":
-        return (
-          <div className="p-2 text-sm text-text-secondary">
-            <p className="mb-3">
-              AI Audio Generation is ready. Pass <code>engine=&#123;hub.audio&#125;</code> for full functionality.
-            </p>
-            <AIAudioPanel engine={null as any} />
-          </div>
-        );
+        return <AIAudioPanel engine={hub.audio} />;
       case "ai-effects":
-        return (
-          <div className="p-2 text-sm text-text-secondary">
-            <p className="mb-3">
-              AI Effects is ready. Pass <code>engine=&#123;hub.effects&#125;</code> and the selected clip ID.
-            </p>
-            <AIEffectsPanel engine={null as any} selectedClipId={null} />
-          </div>
-        );
+        return <AIEffectsPanel engine={hub.effects} selectedClipId={null} />;
       case "ai-settings":
         return <AISettingsPanel />;
       default:
@@ -253,7 +229,6 @@ export const AIGenTab: React.FC = () => {
           </span>
         </div>
 
-        {/* NEW – Generative AI */}
         <FeatureSection title="Generative AI" icon={Sparkles}>
           <FeatureCard
             icon={Video}
