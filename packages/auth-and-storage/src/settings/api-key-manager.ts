@@ -4,11 +4,12 @@ export const PROVIDERS = [
   { id: "lyria", name: "Google Lyria (Gemini)", fields: ["apiKey"] },
   { id: "fal", name: "fal.ai (Kling / other)", fields: ["apiKey"] },
   { id: "openai", name: "OpenAI Compatible", fields: ["apiKey", "baseUrl"] },
+  { id: "openrouter", name: "OpenRouter (multi-model)", fields: ["apiKey"] },
+  { id: "ollama", name: "Ollama (Local)", fields: ["baseUrl"] },
   { id: "local-comfy", name: "Local ComfyUI", fields: ["baseUrl"] },
 ];
 
 export function saveApiKeys(userId: string, keys: Record<string, any>) {
-  // In production: encrypt with user-derived key
   localStorage.setItem(`api_keys_${userId}`, JSON.stringify(keys));
 }
 
