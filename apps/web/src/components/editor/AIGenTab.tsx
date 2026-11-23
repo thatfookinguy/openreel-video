@@ -31,7 +31,7 @@ import { AIAudioPanel } from "./ai/AIAudioPanel";
 import { AIEffectsPanel } from "./ai/AIEffectsPanel";
 import { AISettingsPanel } from "./ai/AISettingsPanel";
 import { AffiliateStudioPanel } from "./ai/AffiliateStudioPanel";
-import { useAIHub } from "./ai/AIHubContext";
+import { AIHubProvider, useAIHub } from "./ai/AIHubContext";
 
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
 
@@ -145,7 +145,7 @@ const FeatureSection: React.FC<FeatureSectionProps> = ({ title, icon: Icon, chil
   </div>
 );
 
-export const AIGenTab: React.FC = () => {
+const AIGenTabInner: React.FC = () => {
   const [activeFeature, setActiveFeature] = useState<FeatureId>(null);
   const ttsHasUnsaved = useTtsAudioStore((s) => s.generatedAudio !== null && !s.isAudioSaved);
   const hub = useAIHub();
@@ -228,9 +228,9 @@ export const AIGenTab: React.FC = () => {
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 mb-3">
             <Wand2 size={24} className="text-primary" aria-hidden />
           </div>
-          <h2 className="text-[12px] leading-4 text-fg-2 font-bold block">AI-Powered Tools</h2>
+          <h2 className="text-[12px] leading-4 text-fg-2 font-bold block">MarketXyn Studio</h2>
           <span className="text-fg-2 font-normal block mt-1 text-[11px]">
-            Automate your editing with intelligent features
+            Create. Convert. Scale.
           </span>
         </div>
 
@@ -384,3 +384,10 @@ export const AIGenTab: React.FC = () => {
     </div>
   );
 };
+
+/** MarketXyn entry: always provide the AI Hub for this tab. */
+export const AIGenTab: React.FC = () => (
+  <AIHubProvider>
+    <AIGenTabInner />
+  </AIHubProvider>
+);
