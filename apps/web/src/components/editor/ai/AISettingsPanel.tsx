@@ -1,47 +1,55 @@
 import { useState, useEffect } from "react";
-import { useAuthStore, PROVIDERS, saveApiKeys, loadApiKeys } from "@openreel/auth-and-storage";
+import {
+  useAuthStore,
+  PROVIDERS,
+  saveApiKeys,
+  loadApiKeys,
+  ensureGuestUser,
+} from "@openreel/auth-and-storage";
 
 export function AISettingsPanel() {
-  const { user, isAuthenticated } = useAuthStore();
+  const user = useAuthStore((s) => s.user);
   const [keys, setKeys] = useState<Record<string, any>>({});
+  const [saved, setSaved] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      setKeys(loadApiKeys(user.id));
-    }
+    ensureGuestUser();
+  }, []);
+
+  useEffect(() => {
+    const id = user?.id || "guest";
+    setKeys(loadApiKeys(id));
   }, [user?.id]);
 
   const handleSave = () => {
-    if (!user?.id) return;
-    saveApiKeys(user.id, keys);
-    alert("API keys saved locally (encrypted per user)");
+    const id = useAuthStore.getState().user?.id || "guest";
+    saveApiKeys(id, keys);
+    setSaved(true);
+    setTimeout(() => setSaved(false), 2000);
   };
 
-  if (!isAuthenticated) {
-    return (
-      <div className="p-6 text-sm text-gray-400">
-        Please log in to manage API keys.
-      </div>
-    );
-  }
-
   return (
-    <div className="p-6 space-y-6 max-w-2xl overflow-auto">
-      <h2 className="text-xl font-bold">AI API Keys</h2>
-      <p className="text-sm text-gray-400">
-        Keys are stored only on this device and encrypted for your account.
-        They never leave your browser unless you enable optional cloud sync.
+    <div className="flex flex-col h-full gap-4 overflow-auto p-1">
+      <h2 className="text-sm font-semibold">MarketXyn — API Keys & Settings</h2>
+      <p className="text-xs text-text-muted">
+        Keys stay on this device. Used for Affiliate Studio, AI Video, AI Audio, and LLMs.
       </p>
 
       {PROVIDERS.map((p) => (
-        <div key={p.id} className="border border-gray-700 rounded-lg p-4 space-y-3">
-          <h3 className="font-medium">{p.name}</h3>
+        <div key={p.id} className="border border-border rounded-lg p-3 space-y-2">
+          <h3 className="text-sm font-medium">{p.name}</h3>
           {p.fields.map((field) => (
             <input
               key={field}
               type={field === "apiKey" ? "password" : "text"}
-              placeholder={field}
-              className="w-full bg-gray-900 border border-gray-700 rounded px-3 py-2 text-sm"
+              placeholder={
+                field === "baseUrl"
+                  ? "http://127.0.0.1:11434"
+                  : field === "apiKey"
+                  ? "API key"
+                  : field
+              }
+              className="w-full bg-background-secondary border border-border rounded px-3 py-2 text-sm"
               value={keys[p.id]?.[field] || ""}
               onChange={(e) =>
                 setKeys({
@@ -56,9 +64,9 @@ export function AISettingsPanel() {
 
       <button
         onClick={handleSave}
-        className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded"
+        className="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded text-sm font-medium"
       >
-        Save Keys
+        {saved ? "Saved" : "Save Keys"}
       </button>
     </div>
   );

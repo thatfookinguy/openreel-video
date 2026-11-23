@@ -8,6 +8,8 @@
     "@openreel/ai-video-gen": "workspace:*",
     "@openreel/ai-audio-gen": "workspace:*",
     "@openreel/ai-effects": "workspace:*",
+    "@openreel/ai-llm": "workspace:*",
+    "@openreel/affiliate-studio": "workspace:*",
     "@openreel/auth-and-storage": "workspace:*"
   }
 }

@@ -1,8 +1,7 @@
-import React, { createContext, useContext, useMemo } from "react";
+import React, { createContext, useContext, useMemo, useEffect } from "react";
 import { createAIHub, type AIHub } from "@openreel/ai-hub";
 import { useProjectStore } from "../../../stores/project-store";
-import { getMediaBridge } from "../../../bridges/media-bridge";
-import { useAuthStore } from "@openreel/auth-and-storage";
+import { useAuthStore, ensureGuestUser } from "@openreel/auth-and-storage";
 
 const AIHubContext = createContext<AIHub | null>(null);
 
@@ -10,12 +9,16 @@ export function AIHubProvider({ children }: { children: React.ReactNode }) {
   const importMedia = useProjectStore((s) => s.importMedia);
   const userId = useAuthStore((s) => s.user?.id ?? null);
 
+  // Phase 0: always have a local guest so keys + hub work without a login screen
+  useEffect(() => {
+    ensureGuestUser();
+  }, []);
+
   const hub = useMemo(() => {
     return createAIHub({
-      getCurrentUserId: () => userId,
+      getCurrentUserId: () => useAuthStore.getState().user?.id ?? "guest",
 
       addMediaAsset: async (fileOrBlob, meta) => {
-        // Convert Blob → File so the existing import path accepts it
         const file =
           fileOrBlob instanceof File
             ? fileOrBlob
@@ -23,17 +26,17 @@ export function AIHubProvider({ children }: { children: React.ReactNode }) {
                 type: fileOrBlob.type || "video/mp4",
               });
 
-        // Use the real project store import so the asset appears in the media library
         const result = await importMedia(file);
 
         if (!result.success) {
-          throw new Error(result.error?.message || "Failed to import generated media");
+          throw new Error(
+            (result as any).error?.message || "Failed to import generated media"
+          );
         }
 
-        return result.actionId || crypto.randomUUID();
+        return (result as any).actionId || crypto.randomUUID();
       },
 
-      // Optional: drop onto timeline automatically (can be expanded later)
       addClipToTimeline: undefined,
     });
   }, [importMedia, userId]);
