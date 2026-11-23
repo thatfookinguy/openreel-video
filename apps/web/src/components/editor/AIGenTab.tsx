@@ -14,6 +14,10 @@ import {
   Settings,
   Eraser,
   DollarSign,
+  Image,
+  LayoutGrid,
+  Globe,
+  BadgeCheck,
 } from "@/icons/lucide-compat";
 import { Button } from "@openreel/ui";
 import { cn } from "@openreel/ui";
@@ -31,6 +35,10 @@ import { AIAudioPanel } from "./ai/AIAudioPanel";
 import { AIEffectsPanel } from "./ai/AIEffectsPanel";
 import { AISettingsPanel } from "./ai/AISettingsPanel";
 import { AffiliateStudioPanel } from "./ai/AffiliateStudioPanel";
+import { ImageStudioPanel } from "./ai/ImageStudioPanel";
+import { BrandStudioPanel } from "./ai/BrandStudioPanel";
+import { WebsiteStudioPanel } from "./ai/WebsiteStudioPanel";
+import { StudioHubPanel } from "./ai/StudioHubPanel";
 import { AIHubProvider, useAIHub } from "./ai/AIHubContext";
 
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
@@ -47,6 +55,10 @@ type FeatureId =
   | "ai-effects"
   | "ai-settings"
   | "affiliate"
+  | "image"
+  | "brand"
+  | "website"
+  | "studio-hub"
   | null;
 
 interface FeatureCardProps {
@@ -195,6 +207,14 @@ const AIGenTabInner: React.FC = () => {
         return <AISettingsPanel />;
       case "affiliate":
         return <AffiliateStudioPanel />;
+      case "image":
+        return <ImageStudioPanel />;
+      case "brand":
+        return <BrandStudioPanel />;
+      case "website":
+        return <WebsiteStudioPanel />;
+      case "studio-hub":
+        return <StudioHubPanel />;
       default:
         return null;
     }
@@ -234,7 +254,34 @@ const AIGenTabInner: React.FC = () => {
           </span>
         </div>
 
+        <FeatureSection title="MarketXyn" icon={LayoutGrid}>
+          <FeatureCard
+            icon={LayoutGrid}
+            title="Studio Hub"
+            description="All modules · Simple / Pro mode"
+            iconColor="text-emerald-400"
+            iconBg="bg-emerald-500/20"
+            activeBorder="border-emerald-500/50"
+            activeBg="bg-emerald-500/10"
+            activeRing="ring-emerald-500/30"
+            isActive={false}
+            onClick={() => handleFeatureClick("studio-hub")}
+          />
+        </FeatureSection>
+
         <FeatureSection title="Generative AI" icon={Sparkles}>
+          <FeatureCard
+            icon={Image}
+            title="AI Image Studio"
+            description="Text-to-image (FLUX) → media library"
+            iconColor="text-violet-400"
+            iconBg="bg-violet-500/20"
+            activeBorder="border-violet-500/50"
+            activeBg="bg-violet-500/10"
+            activeRing="ring-violet-500/30"
+            isActive={false}
+            onClick={() => handleFeatureClick("image")}
+          />
           <FeatureCard
             icon={Video}
             title="AI Video Generation"
@@ -244,7 +291,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-purple-500/50"
             activeBg="bg-purple-500/10"
             activeRing="ring-purple-500/30"
-            isActive={activeFeature === "ai-video"}
+            isActive={false}
             onClick={() => handleFeatureClick("ai-video")}
           />
           <FeatureCard
@@ -256,7 +303,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-pink-500/50"
             activeBg="bg-pink-500/10"
             activeRing="ring-pink-500/30"
-            isActive={activeFeature === "ai-audio"}
+            isActive={false}
             onClick={() => handleFeatureClick("ai-audio")}
           />
           <FeatureCard
@@ -268,7 +315,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-amber-500/50"
             activeBg="bg-amber-500/10"
             activeRing="ring-amber-500/30"
-            isActive={activeFeature === "ai-effects"}
+            isActive={false}
             onClick={() => handleFeatureClick("ai-effects")}
           />
           <FeatureCard
@@ -280,8 +327,35 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-emerald-500/50"
             activeBg="bg-emerald-500/10"
             activeRing="ring-emerald-500/30"
-            isActive={activeFeature === "affiliate"}
+            isActive={false}
             onClick={() => handleFeatureClick("affiliate")}
+          />
+        </FeatureSection>
+
+        <FeatureSection title="Design & Web" icon={BadgeCheck}>
+          <FeatureCard
+            icon={Palette}
+            title="Logo & Branding"
+            description="SVG marks, colors, brand kits"
+            iconColor="text-sky-400"
+            iconBg="bg-sky-500/20"
+            activeBorder="border-sky-500/50"
+            activeBg="bg-sky-500/10"
+            activeRing="ring-sky-500/30"
+            isActive={false}
+            onClick={() => handleFeatureClick("brand")}
+          />
+          <FeatureCard
+            icon={Globe}
+            title="Website Studio"
+            description="Real HTML sites — download & host"
+            iconColor="text-cyan-400"
+            iconBg="bg-cyan-500/20"
+            activeBorder="border-cyan-500/50"
+            activeBg="bg-cyan-500/10"
+            activeRing="ring-cyan-500/30"
+            isActive={false}
+            onClick={() => handleFeatureClick("website")}
           />
           <FeatureCard
             icon={Settings}
@@ -292,7 +366,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-slate-500/50"
             activeBg="bg-slate-500/10"
             activeRing="ring-slate-500/30"
-            isActive={activeFeature === "ai-settings"}
+            isActive={false}
             onClick={() => handleFeatureClick("ai-settings")}
           />
         </FeatureSection>
@@ -307,7 +381,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-blue-500/50"
             activeBg="bg-blue-500/10"
             activeRing="ring-blue-500/30"
-            isActive={activeFeature === "tts"}
+            isActive={false}
             onClick={() => handleFeatureClick("tts")}
           />
           <FeatureCard
@@ -319,7 +393,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-primary/50"
             activeBg="bg-primary/10"
             activeRing="ring-primary/30"
-            isActive={activeFeature === "captions"}
+            isActive={false}
             onClick={() => handleFeatureClick("captions")}
           />
         </FeatureSection>
@@ -334,7 +408,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-green-500/50"
             activeBg="bg-green-500/10"
             activeRing="ring-green-500/30"
-            isActive={activeFeature === "templates"}
+            isActive={false}
             onClick={() => handleFeatureClick("templates")}
           />
           <FeatureCard
@@ -346,7 +420,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-orange-500/50"
             activeBg="bg-orange-500/10"
             activeRing="ring-orange-500/30"
-            isActive={activeFeature === "filters"}
+            isActive={false}
             onClick={() => handleFeatureClick("filters")}
           />
         </FeatureSection>
@@ -361,7 +435,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-teal-500/50"
             activeBg="bg-teal-500/10"
             activeRing="ring-teal-500/30"
-            isActive={activeFeature === "music"}
+            isActive={false}
             onClick={() => handleFeatureClick("music")}
           />
         </FeatureSection>
@@ -376,7 +450,7 @@ const AIGenTabInner: React.FC = () => {
             activeBorder="border-cyan-500/50"
             activeBg="bg-cyan-500/10"
             activeRing="ring-cyan-500/30"
-            isActive={activeFeature === "multicam"}
+            isActive={false}
             onClick={() => handleFeatureClick("multicam")}
           />
         </FeatureSection>
@@ -385,7 +459,6 @@ const AIGenTabInner: React.FC = () => {
   );
 };
 
-/** MarketXyn entry: always provide the AI Hub for this tab. */
 export const AIGenTab: React.FC = () => (
   <AIHubProvider>
     <AIGenTabInner />
