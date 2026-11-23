@@ -10,6 +10,11 @@
     "@openreel/ai-effects": "workspace:*",
     "@openreel/ai-llm": "workspace:*",
     "@openreel/affiliate-studio": "workspace:*",
+    "@openreel/image-studio": "workspace:*",
+    "@openreel/brand-studio": "workspace:*",
+    "@openreel/website-studio": "workspace:*",
+    "@openreel/qc-service": "workspace:*",
+    "@openreel/model-router": "workspace:*",
     "@openreel/auth-and-storage": "workspace:*"
   }
 }

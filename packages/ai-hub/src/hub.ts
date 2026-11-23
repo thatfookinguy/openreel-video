@@ -3,9 +3,13 @@ import { AIAudioGenerationEngine } from "@openreel/ai-audio-gen";
 import { AIEffectsEngine } from "@openreel/ai-effects";
 import { LLMEngine } from "@openreel/ai-llm";
 import { AffiliateStudioEngine } from "@openreel/affiliate-studio";
+import { ImageStudioEngine } from "@openreel/image-studio";
+import { BrandStudioEngine } from "@openreel/brand-studio";
+import { QCEngine } from "@openreel/qc-service";
+import { ModelRouter } from "@openreel/model-router";
+import { WebsiteStudioEngine } from "@openreel/website-studio";
 import { MediaBridge as VideoMediaBridge } from "@openreel/ai-video-gen";
-import { useAuthStore } from "@openreel/auth-and-storage";
-import { loadApiKeys } from "@openreel/auth-and-storage";
+import { useAuthStore, loadApiKeys } from "@openreel/auth-and-storage";
 
 export interface AIHubOptions {
   addMediaAsset: (file: File | Blob, meta: any) => Promise<string>;
@@ -19,18 +23,23 @@ export interface AIHub {
   effects: AIEffectsEngine;
   llm: LLMEngine;
   affiliate: AffiliateStudioEngine;
+  image: ImageStudioEngine;
+  brand: BrandStudioEngine;
+  website: WebsiteStudioEngine;
+  qc: QCEngine;
+  models: ModelRouter;
   getApiKeys: () => Record<string, any>;
   isAuthenticated: () => boolean;
+  addMediaAsset: (file: File | Blob, meta?: any) => Promise<string>;
 }
 
 export function createAIHub(options: AIHubOptions): AIHub {
   const getUserId = () =>
-    options.getCurrentUserId?.() || useAuthStore.getState().user?.id || null;
+    options.getCurrentUserId?.() || useAuthStore.getState().user?.id || "guest";
 
   const getApiKeys = () => {
     const userId = getUserId();
-    if (!userId) return {};
-    return loadApiKeys(userId);
+    return loadApiKeys(userId || "guest");
   };
 
   const videoBridge = new VideoMediaBridge(
@@ -45,6 +54,11 @@ export function createAIHub(options: AIHubOptions): AIHub {
   const effects = new AIEffectsEngine();
   const llm = new LLMEngine(getApiKeys);
   const affiliate = new AffiliateStudioEngine(llm);
+  const image = new ImageStudioEngine(getApiKeys);
+  const brand = new BrandStudioEngine();
+  const website = new WebsiteStudioEngine();
+  const qc = new QCEngine();
+  const models = new ModelRouter(getApiKeys);
 
   return {
     video,
@@ -52,7 +66,13 @@ export function createAIHub(options: AIHubOptions): AIHub {
     effects,
     llm,
     affiliate,
+    image,
+    brand,
+    website,
+    qc,
+    models,
     getApiKeys,
     isAuthenticated: () => !!getUserId(),
+    addMediaAsset: options.addMediaAsset,
   };
 }
