@@ -18,6 +18,10 @@ import {
   LayoutGrid,
   Globe,
   BadgeCheck,
+  Gift,
+  Package,
+  User,
+  Share2,
 } from "@/icons/lucide-compat";
 import { Button } from "@openreel/ui";
 import { cn } from "@openreel/ui";
@@ -39,421 +43,169 @@ import { ImageStudioPanel } from "./ai/ImageStudioPanel";
 import { BrandStudioPanel } from "./ai/BrandStudioPanel";
 import { WebsiteStudioPanel } from "./ai/WebsiteStudioPanel";
 import { StudioHubPanel } from "./ai/StudioHubPanel";
+import { PersonalStudioPanel } from "./ai/PersonalStudioPanel";
+import { GraphicsStudioPanel } from "./ai/GraphicsStudioPanel";
+import { ProductStudioPanel } from "./ai/ProductStudioPanel";
+import { CharacterStudioPanel } from "./ai/CharacterStudioPanel";
 import { AIHubProvider, useAIHub } from "./ai/AIHubContext";
 
 const MultiCameraPanel = lazy(() => import("./inspector/MultiCameraPanel"));
 
 type FeatureId =
-  | "templates"
-  | "captions"
-  | "tts"
-  | "filters"
-  | "music"
-  | "multicam"
-  | "ai-video"
-  | "ai-audio"
-  | "ai-effects"
-  | "ai-settings"
-  | "affiliate"
-  | "image"
-  | "brand"
-  | "website"
-  | "studio-hub"
+  | "templates" | "captions" | "tts" | "filters" | "music" | "multicam"
+  | "ai-video" | "ai-audio" | "ai-effects" | "ai-settings" | "affiliate"
+  | "image" | "brand" | "website" | "studio-hub" | "personal" | "graphics"
+  | "product" | "character"
   | null;
 
-interface FeatureCardProps {
+const FeatureCard: React.FC<{
   icon: React.ElementType;
   title: string;
   description: string;
   iconColor: string;
   iconBg: string;
-  activeBorder: string;
-  activeBg: string;
-  activeRing: string;
-  isActive: boolean;
   onClick: () => void;
-}
-
-const FeatureCard: React.FC<FeatureCardProps> = ({
-  icon: Icon,
-  title,
-  description,
-  iconColor,
-  iconBg,
-  activeBorder,
-  activeBg,
-  activeRing,
-  isActive,
-  onClick,
-}) => (
+}> = ({ icon: Icon, title, description, iconColor, iconBg, onClick }) => (
   <Button
     variant="ghost"
     onClick={onClick}
     type="button"
-    aria-label={title}
     className={cn(
-      "group/card block h-auto min-w-0 whitespace-normal rounded-[7px] border text-left transition-[background-color,border-color,box-shadow,transform] duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring disabled:cursor-not-allowed disabled:opacity-50",
-      isActive ? "" : "border-border bg-bg-1 hover:bg-bg-2",
-      "p-3",
-      `w-full min-w-0 text-left group ${
-        isActive
-          ? `${activeBorder} ${activeBg} ring-1 ${activeRing}`
-          : "border-border bg-background-tertiary hover:border-border-strong hover:bg-background-elevated"
-      }`
+      "group/card block h-auto min-w-0 whitespace-normal rounded-[7px] border text-left p-3 w-full",
+      "border-border bg-background-tertiary hover:border-border-strong hover:bg-background-elevated"
     )}
   >
     <div className="flex items-center gap-3 min-w-0">
-      <div
-        className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center transition-colors ${
-          isActive ? iconBg : "bg-background-secondary group-hover:bg-background-tertiary"
-        }`}
-      >
-        <Icon
-          size={20}
-          className={isActive ? iconColor : "text-text-secondary group-hover:text-text-primary"}
-          aria-hidden
-        />
+      <div className={`w-10 h-10 shrink-0 rounded-lg flex items-center justify-center ${iconBg}`}>
+        <Icon size={20} className={iconColor} />
       </div>
-      <div className="flex-1 min-w-0 overflow-hidden">
+      <div className="flex-1 min-w-0">
         <div className="flex items-center justify-between gap-2">
-          <span
-            className="text-fg-2 font-bold overflow-hidden text-[12px]"
-            style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}
-          >
-            {title}
-          </span>
-          <ChevronRight
-            size={14}
-            className={`shrink-0 transition-transform ${
-              isActive ? "rotate-90 text-text-primary" : "text-text-muted group-hover:text-text-secondary"
-            }`}
-            aria-hidden
-          />
+          <span className="text-fg-2 font-bold text-[12px] truncate">{title}</span>
+          <ChevronRight size={14} className="text-text-muted shrink-0" />
         </div>
-        <span
-          className="text-fg-2 font-normal block overflow-hidden mt-0.5 text-[10px]"
-          style={{ WebkitBoxOrient: "vertical", WebkitLineClamp: 1, display: "-webkit-box" }}
-        >
-          {description}
-        </span>
+        <span className="text-fg-2 text-[10px] block truncate mt-0.5">{description}</span>
       </div>
     </div>
   </Button>
 );
 
-interface FeatureSectionProps {
-  title: string;
-  icon: React.ElementType;
-  children: React.ReactNode;
-}
-
-const FeatureSection: React.FC<FeatureSectionProps> = ({ title, icon: Icon, children }) => (
+const Section: React.FC<{ title: string; icon: React.ElementType; children: React.ReactNode }> = ({
+  title,
+  icon: Icon,
+  children,
+}) => (
   <div className="space-y-2 min-w-0">
     <div className="flex items-center gap-2 px-1">
-      <Icon size={12} className="text-text-muted shrink-0" aria-hidden />
+      <Icon size={12} className="text-text-muted" />
       <span className="text-fg-2 font-bold text-[10px] uppercase">{title}</span>
     </div>
-    <div className="space-y-1.5 min-w-0">{children}</div>
+    <div className="space-y-1.5">{children}</div>
   </div>
 );
 
 const AIGenTabInner: React.FC = () => {
-  const [activeFeature, setActiveFeature] = useState<FeatureId>(null);
+  const [active, setActive] = useState<FeatureId>(null);
   const ttsHasUnsaved = useTtsAudioStore((s) => s.generatedAudio !== null && !s.isAudioSaved);
   const hub = useAIHub();
 
-  const navigateAway = useCallback(
+  const go = useCallback(
     (next: FeatureId) => {
-      if (activeFeature === "tts" && next !== "tts" && ttsHasUnsaved) {
-        toast.warning(
-          "Unsaved audio discarded",
-          "Save to media or download next time to keep it."
-        );
+      if (active === "tts" && next !== "tts" && ttsHasUnsaved) {
+        toast.warning("Unsaved audio discarded", "Save to media next time to keep it.");
       }
-      setActiveFeature(next);
+      setActive(next);
     },
-    [activeFeature, ttsHasUnsaved]
+    [active, ttsHasUnsaved]
   );
 
-  const handleFeatureClick = (id: FeatureId) => {
-    navigateAway(activeFeature === id ? null : id);
-  };
-
-  const renderActivePanel = () => {
-    switch (activeFeature) {
-      case "templates":
-        return <TemplatesBrowserPanel />;
-      case "captions":
-        return <AutoCaptionPanel />;
-      case "tts":
-        return <TextToSpeechPanel />;
-      case "filters":
-        return <FilterPresetsPanel />;
-      case "music":
-        return <MusicLibraryPanel />;
+  const panel = () => {
+    switch (active) {
+      case "templates": return <TemplatesBrowserPanel />;
+      case "captions": return <AutoCaptionPanel />;
+      case "tts": return <TextToSpeechPanel />;
+      case "filters": return <FilterPresetsPanel />;
+      case "music": return <MusicLibraryPanel />;
       case "multicam":
         return (
           <Suspense fallback={null}>
             <MultiCameraPanel />
           </Suspense>
         );
-      case "ai-video":
-        return <AIVideoPanel engine={hub.video} />;
-      case "ai-audio":
-        return <AIAudioPanel engine={hub.audio} />;
-      case "ai-effects":
-        return <AIEffectsPanel engine={hub.effects} selectedClipId={null} />;
-      case "ai-settings":
-        return <AISettingsPanel />;
-      case "affiliate":
-        return <AffiliateStudioPanel />;
-      case "image":
-        return <ImageStudioPanel />;
-      case "brand":
-        return <BrandStudioPanel />;
-      case "website":
-        return <WebsiteStudioPanel />;
-      case "studio-hub":
-        return <StudioHubPanel />;
-      default:
-        return null;
+      case "ai-video": return <AIVideoPanel engine={hub.video} />;
+      case "ai-audio": return <AIAudioPanel engine={hub.audio} />;
+      case "ai-effects": return <AIEffectsPanel engine={hub.effects} selectedClipId={null} />;
+      case "ai-settings": return <AISettingsPanel />;
+      case "affiliate": return <AffiliateStudioPanel />;
+      case "image": return <ImageStudioPanel />;
+      case "brand": return <BrandStudioPanel />;
+      case "website": return <WebsiteStudioPanel />;
+      case "studio-hub": return <StudioHubPanel />;
+      case "personal": return <PersonalStudioPanel />;
+      case "graphics": return <GraphicsStudioPanel />;
+      case "product": return <ProductStudioPanel />;
+      case "character": return <CharacterStudioPanel />;
+      default: return null;
     }
   };
 
-  if (activeFeature) {
+  if (active) {
     return (
       <div className="flex-1 flex flex-col overflow-y-auto w-full min-w-0">
         <Button
-          onClick={() => navigateAway(null)}
+          onClick={() => go(null)}
           type="button"
-          aria-label="Back to AI Tools"
-          className="inline-flex min-w-0 items-center gap-1.5 font-semibold outline-none transition-colors focus-visible:ring-2 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 h-8 px-3 text-[12px] text-fg-2 hover:bg-bg-2 hover:text-fg justify-start rounded-none border-b border-border bg-background-secondary shrink-0"
+          className="h-8 px-3 text-[12px] justify-start rounded-none border-b border-border bg-background-secondary shrink-0"
         >
-          <span className="flex h-4 w-4 shrink-0 items-center justify-center">
-            <ChevronRight size={14} className="rotate-180" aria-hidden />
-          </span>
-          <span className="truncate">Back to AI Tools</span>
+          <ChevronRight size={14} className="rotate-180 mr-1" />
+          Back to AI Tools
         </Button>
-        <div className="flex-1 w-full overflow-y-auto">
-          <div className="p-4 w-full min-w-0 overflow-hidden">{renderActivePanel()}</div>
-        </div>
+        <div className="p-4 overflow-y-auto">{panel()}</div>
       </div>
     );
   }
 
   return (
     <div className="flex-1 w-full overflow-y-auto">
-      <div className="p-4 space-y-6 min-w-0">
+      <div className="p-4 space-y-6">
         <div className="text-center pb-2">
           <div className="inline-flex items-center justify-center w-12 h-12 rounded-2xl bg-gradient-to-br from-primary/20 to-primary/5 mb-3">
-            <Wand2 size={24} className="text-primary" aria-hidden />
+            <Wand2 size={24} className="text-primary" />
           </div>
-          <h2 className="text-[12px] leading-4 text-fg-2 font-bold block">MarketXyn Studio</h2>
-          <span className="text-fg-2 font-normal block mt-1 text-[11px]">
-            Create. Convert. Scale.
-          </span>
+          <h2 className="text-[12px] font-bold text-fg-2">MarketXyn Studio</h2>
+          <span className="text-[11px] text-fg-2">Create. Convert. Scale.</span>
         </div>
 
-        <FeatureSection title="MarketXyn" icon={LayoutGrid}>
-          <FeatureCard
-            icon={LayoutGrid}
-            title="Studio Hub"
-            description="All modules · Simple / Pro mode"
-            iconColor="text-emerald-400"
-            iconBg="bg-emerald-500/20"
-            activeBorder="border-emerald-500/50"
-            activeBg="bg-emerald-500/10"
-            activeRing="ring-emerald-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("studio-hub")}
-          />
-        </FeatureSection>
+        <Section title="MarketXyn" icon={LayoutGrid}>
+          <FeatureCard icon={LayoutGrid} title="Studio Hub" description="All modules · Simple / Pro" iconColor="text-emerald-400" iconBg="bg-emerald-500/20" onClick={() => go("studio-hub")} />
+          <FeatureCard icon={Settings} title="API Keys & Settings" description="OpenRouter, Ollama, fal, ElevenLabs" iconColor="text-slate-400" iconBg="bg-slate-500/20" onClick={() => go("ai-settings")} />
+        </Section>
 
-        <FeatureSection title="Generative AI" icon={Sparkles}>
-          <FeatureCard
-            icon={Image}
-            title="AI Image Studio"
-            description="Text-to-image (FLUX) → media library"
-            iconColor="text-violet-400"
-            iconBg="bg-violet-500/20"
-            activeBorder="border-violet-500/50"
-            activeBg="bg-violet-500/10"
-            activeRing="ring-violet-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("image")}
-          />
-          <FeatureCard
-            icon={Video}
-            title="AI Video Generation"
-            description="Text-to-video & image-to-video (Kling, etc.)"
-            iconColor="text-purple-400"
-            iconBg="bg-purple-500/20"
-            activeBorder="border-purple-500/50"
-            activeBg="bg-purple-500/10"
-            activeRing="ring-purple-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("ai-video")}
-          />
-          <FeatureCard
-            icon={Music}
-            title="AI Audio Generation"
-            description="Music, voiceovers & sound effects"
-            iconColor="text-pink-400"
-            iconBg="bg-pink-500/20"
-            activeBorder="border-pink-500/50"
-            activeBg="bg-pink-500/10"
-            activeRing="ring-pink-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("ai-audio")}
-          />
-          <FeatureCard
-            icon={Eraser}
-            title="AI Effects"
-            description="Background removal, object removal, enhance"
-            iconColor="text-amber-400"
-            iconBg="bg-amber-500/20"
-            activeBorder="border-amber-500/50"
-            activeBg="bg-amber-500/10"
-            activeRing="ring-amber-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("ai-effects")}
-          />
-          <FeatureCard
-            icon={DollarSign}
-            title="Affiliate Studio"
-            description="Product research, scripts & ad creatives"
-            iconColor="text-emerald-400"
-            iconBg="bg-emerald-500/20"
-            activeBorder="border-emerald-500/50"
-            activeBg="bg-emerald-500/10"
-            activeRing="ring-emerald-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("affiliate")}
-          />
-        </FeatureSection>
+        <Section title="Generative AI" icon={Sparkles}>
+          <FeatureCard icon={Image} title="AI Image Studio" description="FLUX → media library" iconColor="text-violet-400" iconBg="bg-violet-500/20" onClick={() => go("image")} />
+          <FeatureCard icon={Video} title="AI Video" description="Text / image to video" iconColor="text-purple-400" iconBg="bg-purple-500/20" onClick={() => go("ai-video")} />
+          <FeatureCard icon={Music} title="AI Audio" description="Voice, music, SFX" iconColor="text-pink-400" iconBg="bg-pink-500/20" onClick={() => go("ai-audio")} />
+          <FeatureCard icon={Eraser} title="AI Effects" description="BG remove, enhance" iconColor="text-amber-400" iconBg="bg-amber-500/20" onClick={() => go("ai-effects")} />
+          <FeatureCard icon={DollarSign} title="Affiliate Studio" description="Research + scripts" iconColor="text-emerald-400" iconBg="bg-emerald-500/20" onClick={() => go("affiliate")} />
+        </Section>
 
-        <FeatureSection title="Design & Web" icon={BadgeCheck}>
-          <FeatureCard
-            icon={Palette}
-            title="Logo & Branding"
-            description="SVG marks, colors, brand kits"
-            iconColor="text-sky-400"
-            iconBg="bg-sky-500/20"
-            activeBorder="border-sky-500/50"
-            activeBg="bg-sky-500/10"
-            activeRing="ring-sky-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("brand")}
-          />
-          <FeatureCard
-            icon={Globe}
-            title="Website Studio"
-            description="Real HTML sites — download & host"
-            iconColor="text-cyan-400"
-            iconBg="bg-cyan-500/20"
-            activeBorder="border-cyan-500/50"
-            activeBg="bg-cyan-500/10"
-            activeRing="ring-cyan-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("website")}
-          />
-          <FeatureCard
-            icon={Settings}
-            title="API Keys & Settings"
-            description="OpenRouter, Ollama, fal.ai, ElevenLabs..."
-            iconColor="text-slate-400"
-            iconBg="bg-slate-500/20"
-            activeBorder="border-slate-500/50"
-            activeBg="bg-slate-500/10"
-            activeRing="ring-slate-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("ai-settings")}
-          />
-        </FeatureSection>
+        <Section title="Design & Commerce" icon={BadgeCheck}>
+          <FeatureCard icon={Palette} title="Logo & Branding" description="SVG marks + kits" iconColor="text-sky-400" iconBg="bg-sky-500/20" onClick={() => go("brand")} />
+          <FeatureCard icon={Share2} title="Graphics & Marketing" description="Social / ad sizes" iconColor="text-orange-400" iconBg="bg-orange-500/20" onClick={() => go("graphics")} />
+          <FeatureCard icon={Gift} title="Personal Design" description="Invites, holiday, print" iconColor="text-rose-400" iconBg="bg-rose-500/20" onClick={() => go("personal")} />
+          <FeatureCard icon={Package} title="Product Studio" description="Ecommerce product shots" iconColor="text-teal-400" iconBg="bg-teal-500/20" onClick={() => go("product")} />
+          <FeatureCard icon={User} title="Character Studio" description="Refs + poses" iconColor="text-indigo-400" iconBg="bg-indigo-500/20" onClick={() => go("character")} />
+          <FeatureCard icon={Globe} title="Website Studio" description="Real HTML download" iconColor="text-cyan-400" iconBg="bg-cyan-500/20" onClick={() => go("website")} />
+        </Section>
 
-        <FeatureSection title="Content Generation" icon={Wand2}>
-          <FeatureCard
-            icon={Mic}
-            title="Text to Speech"
-            description="Generate natural voiceovers from text"
-            iconColor="text-blue-400"
-            iconBg="bg-blue-500/20"
-            activeBorder="border-blue-500/50"
-            activeBg="bg-blue-500/10"
-            activeRing="ring-blue-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("tts")}
-          />
-          <FeatureCard
-            icon={Subtitles}
-            title="Auto Captions"
-            description="Automatically generate subtitles from audio"
-            iconColor="text-primary"
-            iconBg="bg-primary/20"
-            activeBorder="border-primary/50"
-            activeBg="bg-primary/10"
-            activeRing="ring-primary/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("captions")}
-          />
-        </FeatureSection>
-
-        <FeatureSection title="Templates & Presets" icon={FileStack}>
-          <FeatureCard
-            icon={Layers}
-            title="Project Templates"
-            description="Start with pre-built project structures"
-            iconColor="text-green-400"
-            iconBg="bg-green-500/20"
-            activeBorder="border-green-500/50"
-            activeBg="bg-green-500/10"
-            activeRing="ring-green-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("templates")}
-          />
-          <FeatureCard
-            icon={Palette}
-            title="Filter Presets"
-            description="Apply cinematic color grades instantly"
-            iconColor="text-orange-400"
-            iconBg="bg-orange-500/20"
-            activeBorder="border-orange-500/50"
-            activeBg="bg-orange-500/10"
-            activeRing="ring-orange-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("filters")}
-          />
-        </FeatureSection>
-
-        <FeatureSection title="Media Library" icon={Volume2}>
-          <FeatureCard
-            icon={Music}
-            title="Music & Sound Effects"
-            description="Browse royalty-free audio for your projects"
-            iconColor="text-teal-400"
-            iconBg="bg-teal-500/20"
-            activeBorder="border-teal-500/50"
-            activeBg="bg-teal-500/10"
-            activeRing="ring-teal-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("music")}
-          />
-        </FeatureSection>
-
-        <FeatureSection title="Tools" icon={Video}>
-          <FeatureCard
-            icon={Video}
-            title="Multi-Camera Editing"
-            description="Sync and switch between multiple angles"
-            iconColor="text-cyan-400"
-            iconBg="bg-cyan-500/20"
-            activeBorder="border-cyan-500/50"
-            activeBg="bg-cyan-500/10"
-            activeRing="ring-cyan-500/30"
-            isActive={false}
-            onClick={() => handleFeatureClick("multicam")}
-          />
-        </FeatureSection>
+        <Section title="Editor tools" icon={Wand2}>
+          <FeatureCard icon={Mic} title="Text to Speech" description="Built-in TTS" iconColor="text-blue-400" iconBg="bg-blue-500/20" onClick={() => go("tts")} />
+          <FeatureCard icon={Subtitles} title="Auto Captions" description="Subtitles from audio" iconColor="text-primary" iconBg="bg-primary/20" onClick={() => go("captions")} />
+          <FeatureCard icon={Layers} title="Project Templates" description="Start structures" iconColor="text-green-400" iconBg="bg-green-500/20" onClick={() => go("templates")} />
+          <FeatureCard icon={Palette} title="Filter Presets" description="Color grades" iconColor="text-orange-400" iconBg="bg-orange-500/20" onClick={() => go("filters")} />
+          <FeatureCard icon={Music} title="Music Library" description="Royalty-free audio" iconColor="text-teal-400" iconBg="bg-teal-500/20" onClick={() => go("music")} />
+          <FeatureCard icon={Video} title="Multi-Camera" description="Multi-angle edit" iconColor="text-cyan-400" iconBg="bg-cyan-500/20" onClick={() => go("multicam")} />
+        </Section>
       </div>
     </div>
   );
